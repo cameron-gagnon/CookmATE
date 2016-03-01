@@ -104,15 +104,16 @@ def next_recipe_intent_handler(request):
         return r.create_response(message=outMessage)
 
     webPage.storeTopFive()
-    top3 = webPage.returnTopFive()
+    topRecipes = webPage.returnTopFive()
     
     db = Database(request.user_id())
-    db.updateLinks(top3)
+    db.updateLinks(topRecipes)
+    topRecipes.sort()
 
     outMessage = "The top 3 {0} recipes are 1. {1}, 2. {2}, and 3. {3}.".format(food,
-                                                                       top3[0][0],
-                                                                       top3[1][0],
-                                                                       top3[2][0])
+                                                                       topRecipes[0][0],
+                                                                       topRecipes[1][0],
+                                                                       topRecipes[2][0])
     outMessage += " Which one would you like to make?"
     rePrompt = "Please pick an option 1 through 3."
 
@@ -131,16 +132,19 @@ def choose_recipe_intent_handler(request):
     if ((1 <= int(choiceNum)) and (int(choiceNum) <= 3)):
         db = Database(request.user_id())
         db.updateChoice(choiceNum)
+        # get what step we're on
         db.setItem("IngStep", -1)
         db.setItem("DirStep", -1)
+        print(choiceNum)
         link = db.getLink(choiceNum)
+        print(link)
         recipe = scrape.Recipe(link)
         db.loadRecipe(recipe)
 
     outMessage = recipe.nameOfRecipe + " selected. "
     outMessage += "Say: 'start' to continue, or, 'cancel' to end."
 
-    return r.create_response(message=outMessage);
+    return r.create_response(message=outMessage)
 
 
 @voice.intent_handler(intent="GetInfoIntent")
@@ -281,8 +285,9 @@ def next_recipe_intent(request):
         outMessage = "That's the whole recipe! Enjoy your meal! Cookmate: out."
         return r.create_response(message=outMessage, end_session=True)
 
-    return r.create_response(message=outMessage, reprompt_message="Say next to continue");
-
+    return r.create_response(message=outMessage,
+                             reprompt_message="Say next to continue",
+                             end_session=True)
 
 
 class Database:
@@ -309,16 +314,16 @@ class Database:
                         ReturnValues="UPDATED_NEW"
                     )
 
-    def updateLinks(self, top3):
+    def updateLinks(self, topRecipes):
         self.client.update_item(TableName=self.TABLENAME,
                     Key={
                         "UserID": {"S": self.user_id},
                     },
                     UpdateExpression="set URLS = :a",
                     ExpressionAttributeValues={
-                        ":a": {"SS": [top3[0][1],
-                                      top3[1][1],
-                                      top3[2][1]
+                        ":a": {"SS": [topRecipes[0][1],
+                                      topRecipes[1][1],
+                                      topRecipes[2][1]
                                      ]
                             }
                         },
@@ -335,7 +340,7 @@ class Database:
                 },
                     ProjectionExpression="URLS"
                 )
-
+        
         return results['Item']['URLS']['SS'][int(choiceNum) - 1]
     
 
