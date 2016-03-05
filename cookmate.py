@@ -135,7 +135,7 @@ def choose_recipe_intent_handler(request):
         # get what step we're on
         db.setItem("IngStep", -1)
         db.setItem("DirStep", -1)
-        print(choiceNum)
+        
         link = db.getLink(choiceNum)
         print(link)
         recipe = scrape.Recipe(link)
@@ -301,7 +301,7 @@ class Database:
 
     def updateChoice(self, choiceNum): 
         """
-            update the users choice
+            update the users choice of the top recipe
         """
         self.client.update_item(TableName=self.TABLENAME,
                         Key={

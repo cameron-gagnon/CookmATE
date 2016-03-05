@@ -107,6 +107,10 @@ class Parse:
                 # group(1) is just the 350 or whatever the temperature is
                 # of our oven
                 self.ovenTemp = match.group(1)
+            # if no temperature if found, we set it to -1 so we can
+            # check for 'null' values later
+            else:
+                self.ovenTemp = -1
 
             if step.text != '':
                 self.steps.append(step.text)
